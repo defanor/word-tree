@@ -1,0 +1,49 @@
+A serialization format draft:
+
+delimiter = " " | "\n"
+restricted-char = "(" | ")" | delimiter | "\"
+tree-or-val = "(" forest ")"
+            | delimiter +
+            | ("\" restricted-char | any-char - restricted-char) +
+forest = tree-or-val *
+
+A document (possibly a stream) is a list (forest) of trees and
+individual values. Parentheses are the primary separators, allowing to
+shape the forest, and whitespace characters allow for additional
+tokenization, into "words".
+
+"Words" are not typed, since with formats like JSON, the parsing of
+those often happens out of string literals, in addition to parsing of
+the structure and standardized types, and distinctions between
+standardized types tend to stay in the way, rather than to help (e.g.,
+when reading structures serialized without much care from a
+dynamically typed language).
+
+Likewise, there are no quoted strings: a text run (possibly
+parenthesized) can be treated as a string, similarly to how it is done
+in SGML-based languages. Either a parser may provide those by parsing
+lazily, or they can be reconstructed out of individual tree leaves.
+
+Hex digit or mnemonic escapes are not included, to keep it simple, and
+since they can be applied externally if needed.
+
+Planning use of association lists, first symbol in a subforest playing
+the role of a tag or a constructor (as with S-expressions), name
+prefixes to emulate namespaces.
+
+Aiming simplicity of implementation and of usage (reading and
+writing). Multiple implementations are included to use as references,
+for testing, and as a general playground.
+
+
+Not entirely certain about the escaping rules: whether whitespace
+character escaping is needed (or it mostly duplicates the
+functionality available by parenthesizing text runs, and complicates
+the format), whether it would be a good idea to allow single unescaped
+backslashes if there is nothing to escape after them (and if so,
+whether double backslashes should be equivalent to single ones then,
+which may be confusing).
+
+Perhaps a declaration with version and encoding should be composed,
+something like "(wt 0.0 UTF-8)". A schema description may be nice to
+compose early on.

@@ -1,0 +1,15 @@
+name:               example
+version:            0.1.0.0
+
+author:             defanor
+maintainer:         defanor@thunix.net
+build-type:         Simple
+cabal-version:      >=1.10
+
+executable example
+    main-is:          Example.hs
+    build-depends:    base
+                    , attoparsec
+                    , bytestring
+                    , containers
+    default-language: Haskell2010
