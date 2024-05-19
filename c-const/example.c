@@ -52,6 +52,17 @@ ssize_t read_token (const char *input, size_t input_len, int delimited) {
   return i;
 }
 
+size_t unescape (const char *src, size_t src_len, char *dst) {
+  size_t i, j;
+  for (i = 0, j = 0; i < src_len; i++, j++) {
+    if (src[i] == '\\') {
+      i++;
+    }
+    dst[j] = src[i];
+  }
+  return j;
+}
+
 int main (int argc, char **argv) {
   int max_depth_tree = atoi(argv[1]);
   int max_depth_literal = atoi(argv[2]);
@@ -79,8 +90,12 @@ int main (int argc, char **argv) {
     if (token_len <= 0) {
       return -1;
     }
-    printf("%d %ld: ", level, token_len);
-    fwrite(input + pos, 1, token_len, stdout);
+    size_t unescaped_len = token_len;
+    if (input[pos] != '(') {
+      unescaped_len = unescape(input + pos, token_len, input + pos);
+    }
+    printf("%d %ld %ld: ", level, token_len, unescaped_len);
+    fwrite(input + pos, 1, unescaped_len, stdout);
     puts("");
     if (input[pos] == '(' && level < max_depth_tree) {
       level++;
