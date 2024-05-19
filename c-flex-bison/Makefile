@@ -6,7 +6,7 @@ lexer.h lex.yy.c: lexer.l
 parser.h parser.tab.c: parser.y
 	bison $^
 
-example: lex.yy.c parser.tab.c parser.h lexer.h example.c
+example: lex.yy.c parser.tab.c parser.h lexer.h tree.h example.c
 	cc -g -o $@ lex.yy.c parser.tab.c example.c
 
 test: example

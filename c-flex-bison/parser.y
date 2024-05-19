@@ -3,7 +3,7 @@
   #include "tree.h"
   #include "parser.h"
   #include "lexer.h"
-  void yyerror (struct tree **root, yyscan_t scanner, char const *);
+  void yyerror (struct forest **root, yyscan_t scanner, char const *);
 %}
 
 %code requires {
@@ -18,14 +18,15 @@
   TREE_END
   <exp> VAL
   FAILURE
-%parse-param {struct tree **root}
+%parse-param {struct forest **root}
 %param   { yyscan_t scanner }
 
 %union {
   struct tree* exp;
+  struct forest* forest;
 }
 %type <exp> tree
-%type <exp> forest
+%type <forest> forest
 %type <exp> tree_or_val
 
 %%
@@ -33,14 +34,14 @@
 
 forest:
 %empty { $$ = NULL; }
-| forest[F] tree_or_val[C]
+| forest[F] tree_or_val[T]
 {
   if ($F != NULL) {
-    $F->last->next = $C;
-    $F->last = $C;
+    plant_tree($F, $T);
     $$ = $F;
   } else {
-    $$ = $C;
+    $$ = forest_alloc();
+    plant_tree($$, $T);
   }
   *root = $$;
 };
@@ -49,7 +50,6 @@ tree: TREE_START forest[F] TREE_END
 {
   $$ = tree_alloc(parenthesized, NULL, 0);
   $$->children = $F;
-  *root = $$;
 };
 
 tree_or_val: tree | VAL;

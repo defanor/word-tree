@@ -14,23 +14,38 @@ struct tree *tree_alloc(enum tree_type type, char *raw, size_t len) {
   size_t i, j;
   struct tree *ret = malloc(sizeof(struct tree));
   ret->type = type;
-  ret->children = NULL;
-  ret->next = NULL;
-  ret->last = ret;
-  ret->raw = NULL;
-  ret->raw_len = 0;
-  if (raw != NULL) {
-    ret->raw = malloc(len + 1);
-    for (i = 0, j = 0; i < len; i++, j++) {
-      if (raw[i] == '\\') {
-        i++;
+  if (type == parenthesized) {
+    ret->children = NULL;
+  } else {
+    ret->literal.data = NULL;
+    ret->literal.len = 0;
+    if (raw != NULL) {
+      ret->literal.data = malloc(len + 1);
+      for (i = 0, j = 0; i < len; i++, j++) {
+        if (raw[i] == '\\') {
+          i++;
+        }
+        ret->literal.data[j] = raw[i];
       }
-      ret->raw[j] = raw[i];
+      ret->literal.data[j] = '\0';
+      ret->literal.len = j;
     }
-    ret->raw[j] = '\0';
-    ret->raw_len = j;
   }
   return ret;
+}
+
+struct forest *forest_alloc () {
+  struct forest *ret = malloc(sizeof(struct forest));
+  ret->trees = NULL;
+  ret->tree_num = 0;
+  return ret;
+}
+
+void plant_tree (struct forest *forest, struct tree *tree) {
+  forest->trees =
+    reallocarray(forest->trees, forest->tree_num + 1, sizeof(struct tree*));
+  forest->trees[forest->tree_num] = tree;
+  forest->tree_num = forest->tree_num + 1;
 }
 
 char *escape (const char *s, size_t len, size_t *out_len) {
@@ -49,15 +64,21 @@ char *escape (const char *s, size_t len, size_t *out_len) {
   return ret;
 }
 
-void print_forest(struct tree *tree, int debug) {
-  if (tree->raw != NULL) {
-    char *escaped = tree->raw;
-    size_t escaped_len = tree->raw_len;
+void print_tree (struct tree *tree, int debug) {
+  if (tree->type == parenthesized) {
+    printf("(");
+    if (tree->children != NULL) {
+      print_forest(tree->children, debug);
+    }
+    printf(")");
+  } else {
+    char *escaped = tree->literal.data;
+    size_t escaped_len = tree->literal.len;
     if (tree->type == escaped_run) {
-      escaped = escape(tree->raw, tree->raw_len, &escaped_len);
+      escaped = escape(tree->literal.data, tree->literal.len, &escaped_len);
     }
     if (debug) {
-      printf("raw: (%d / %d): '", tree->raw_len, escaped_len);
+      printf("raw: (%d / %d): '", tree->literal.len, escaped_len);
     }
     size_t i;
     for (i = 0; i < escaped_len; i++) {
@@ -67,15 +88,13 @@ void print_forest(struct tree *tree, int debug) {
       printf("'\n");
     }
     free(escaped);
-  } else {
-    printf("(");
-    if (tree->children != NULL) {
-      print_forest(tree->children, debug);
-    }
-    printf(")");
   }
-  if (tree->next != NULL) {
-    print_forest(tree->next, debug);
+}
+
+void print_forest (struct forest *forest, int debug) {
+  int i;
+  for (i = 0; i < forest->tree_num; i++) {
+    print_tree(forest->trees[i], debug);
   }
 }
 
@@ -91,7 +110,7 @@ int main (int argc, char **argv)
 
   state = yy_scan_string(argv[1], scanner);
 
-  struct tree *root;
+  struct forest *root;
   /* yydebug = 1; */
   if (yyparse (&root, scanner)) {
     puts("parse failed");
