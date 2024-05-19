@@ -2,8 +2,8 @@
 
 This parser example has adjustable maximum depth levels for
 parenthesized expressions and for raw text runs. Once those levels are
-reached, it ceases to store children of parenthesized expressions
-(stores their raw contents only), and concatenates the tokens of raw
+reached, it ceases to store children of parenthesized expressions and
+stores their raw contents instead, and concatenates the tokens of raw
 text runs.
 
 -}
@@ -18,11 +18,10 @@ import Numeric
 
 pTree :: (Int, Int, Int) -> Parser (Tree BS.ByteString)
 pTree (level, maxDepthP, maxDepthW) =
-  (uncurry Node . (\(r, c) ->
-                     (r, if level < maxDepthP then c else []))
-    <$> (char '(' *>
-         match (pForest (level + 1, maxDepthP, maxDepthW))
-         <* char ')'))
+  ((\(r, c) -> if level < maxDepthP then Node BS.empty c else Node r [])
+    <$> (match (char '(' *>
+                pForest (level + 1, maxDepthP, maxDepthW)
+                <* char ')')))
   <|> flip Node [] . BS.pack <$>
   (if level < maxDepthW then id else (\p -> concat <$> some p))
   (choice
