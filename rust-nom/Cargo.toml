@@ -1,0 +1,10 @@
+[package]
+name = "example"
+version = "0.0.0"
+
+[dependencies]
+nom = "~7"
+
+[[bin]]
+name = "example"
+path = "example.rs"
